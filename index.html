@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canlı ve Modern Dikey Futbol Oyunu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to bottom, #1a1a1a, #333333); /* Koyu gradyan arka plan */
+            touch-action: none;
+            font-family: 'Orbitron', sans-serif; /* Global font */
+            color: white;
+        }
+        canvas {
+            display: block;
+            border: 3px solid #666; /* Kenarlık */
+            box-sizing: border-box;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* Hafif dış gölge */
+            border-radius: 8px; /* Hafif yuvarlak köşeler */
+        }
+        #powerIndicator {
+            position: absolute;
+            bottom: 30px; /* Daha yukarıda */
+            width: 220px; /* Daha geniş */
+            height: 25px; /* Daha kalın */
+            background-color: rgba(0, 0, 0, 0.5); /* Koyu yarı şeffaf */
+            border-radius: 15px; /* Daha yuvarlak */
+            display: none;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.6); /* Beyaz parlak kenarlık */
+        }
+        #powerFill {
+            height: 100%;
+            background: linear-gradient(to right, #00BFFF, #FFD700); /* Canlı mavi-altın gradyan */
+            border-radius: 15px;
+            width: 0%;
+            transition: width 0.1s ease-out; /* Daha yumuşak geçiş */
+        }
+
+        /* --- Ana Menü Stilleri --- */
+        .menuContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9); /* Yarı şeffaf koyu arka plan */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100; /* Canvas'ın üzerinde görünmesini sağlar */
+            text-align: center;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .menuContainer.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .menuContainer h1 {
+            font-size: 3.5em; /* Daha büyük başlık */
+            color: #FFD700; /* Altın sarısı */
+            margin-bottom: 40px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); /* Parlak gölge */
+            letter-spacing: 2px;
+        }
+        .menuButton {
+            background: linear-gradient(to right, #1E90FF, #00BFFF); /* Mavi gradyan */
+            color: white;
+            border: none;
+            padding: 18px 40px; /* Daha büyük buton */
+            margin: 15px 0;
+            border-radius: 30px; /* Daha yuvarlak */
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em; /* Daha büyük yazı */
+            cursor: pointer;
+            transition: all 0.3s ease; /* Yumuşak geçiş */
+            box-shadow: 0 5px 15px rgba(0, 191, 255, 0.4); /* Hafif gölge */
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .menuButton:hover {
+            background: linear-gradient(to right, #00BFFF, #1E90FF); /* Gradyan yönü değişimi */
+            box-shadow: 0 8px 25px rgba(0, 191, 255, 0.6); /* Daha belirgin gölge */
+            transform: translateY(-3px); /* Hafif yukarı kalkma */
+        }
+        .menuButton:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(0, 191, 255, 0.3);
+        }
+
+        /* Ayarlar Menüsü Stilleri */
+        #optionsMenu {
+            padding: 40px;
+            background: rgba(20, 20, 20, 0.95);
+            border-radius: 15px;
+            border: 2px solid #666;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            width: 80%;
+            max-width: 600px; /* Genişletildi */
+        }
+        #optionsMenu h2 {
+            font-size: 2em;
+            color: #FFD700;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        .option-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .option-group label {
+            display: block;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #E0E0E0;
+            letter-spacing: 1px;
+        }
+        .option-group input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 10px;
+            background: #555;
+            border-radius: 5px;
+            outline: none;
+            transition: background 0.2s ease;
+        }
+        .option-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #00BFFF;
+            cursor: grab;
+            box-shadow: 0 0 8px rgba(0, 191, 255, 0.6);
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .option-group input[type="range"]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            background: #1E90FF;
+            box-shadow: 0 0 15px rgba(30, 144, 255, 0.8);
+        }
+        #playerSizeValue {
+            font-size: 1.1em;
+            color: #FFD700;
+            margin-left: 15px;
+            vertical-align: middle;
+            display: inline-block;
+            min-width: 30px;
+        }
+        .backButton {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            margin-top: 30px;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .backButton:hover {
+            background: #777;
+            transform: translateY(-2px);
+        }
+
+        /* Forma Seçenekleri Stilleri */
+        .pattern-options-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Daha küçük ve dinamik grid */
+            gap: 15px; /* Boşluk artırıldı */
+            justify-items: center;
+            align-items: center;
+            padding: 15px 0;
+            max-height: 250px; /* Maksimum yükseklik eklendi */
+            overflow-y: auto; /* Dikey kaydırma çubuğu eklendi */
+            border: 1px solid #444; /* Kenarlık */
+            border-radius: 10px; /* Yuvarlak köşeler */
+            background-color: rgba(0, 0, 0, 0.3); /* Hafif arka plan */
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        .pattern-options-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera*/
+        }
+
+        .pattern-item {
+            width: 80px; /* Önizleme boyutu */
+            height: 80px;
+            border: 2px solid #555;
+            border-radius: 8px;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            display: flex; /* İçeriği ortalamak için */
+            justify-content: center; /* İçeriği ortalamak için */
+            align-items: center; /* İçeriği ortalamak için */
+        }
+        .pattern-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 191, 255, 0.6);
+            border-color: #00BFFF;
+        }
+        .pattern-item.selected {
+            border-color: #FFD700; /* Seçili öğe için altın sarısı */
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 25px rgba(255, 215, 0, 0.5); /* Parlak gölge */
+            transform: scale(1.05); /* Hafif büyütme */
+        }
+        .pattern-item canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: none; /* Canvas'ın kendi kenarlığını kaldır */
+            box-shadow: none; /* Canvas'ın kendi gölgesini kaldır */
+            border-radius: 0; /* Canvas'ın kendi yuvarlaklığını kaldır */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="powerIndicator"><div id="powerFill"></div></div>
+
+    <div id="mainMenu" class="menuContainer">
+        <h1>DİKEY FUTBOL</h1>
+        <button class="menuButton" id="startGameButton">OYNA</button>
+        <button class="menuButton" id="howToPlayButton">NASIL OYNANIR?</button>
+        <button class="menuButton" id="optionsButton">AYARLAR</button>
+    </div>
+
+    <div id="optionsMenu" class="menuContainer hidden">
+        <h2>AYARLAR</h2>
+        <div class="option-group">
+            <label>KENDİ TAKIMININ FORMASI</label>
+            <div id="patternOptionsContainer" class="pattern-options-container">
+                </div>
+        </div>
+        <button class="backButton" id="backToMainButton">ANA MENÜYE DÖN</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const powerIndicator = document.getElementById('powerIndicator');
+        const powerFill = document.getElementById('powerFill');
+        const mainMenu = document.getElementById('mainMenu');
+        const startGameButton = document.getElementById('startGameButton');
+        const optionsButton = document.getElementById('optionsButton');
+        const optionsMenu = document.getElementById('optionsMenu');
+        const backToMainButton = document.getElementById('backToMainButton');
+        const patternOptionsContainer = document.getElementById('patternOptionsContainer'); // Yeni konteyner
+
+        // Kırmızı takım rengini sabitleyelim
+        const RED_TEAM_COLOR = "#FF4500"; 
+        const DEFAULT_BLUE_COLOR = "#1E90FF"; // Varsayılan mavi renk
+
+        let gameStarted = false;
+
+        // Web Audio API Context'i oluştur
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Ses Efektleri İçin Yardımcı Fonksiyon
+        function playSound(type, frequency = 440, duration = 0.1, volume = 0.5) {
+            if (!audioContext) return; // Tarayıcı desteklemiyorsa veya kapatıldıysa çık
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = type; // 'sine', 'square', 'sawtooth', 'triangle'
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration); // Sesi yavaşça azalt
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playCollisionSound(volume = 0.7) {
+            // Kısa bir düşüş sesi için iki osilatör kullan
+            const oscillator1 = audioContext.createOscillator();
+            const oscillator2 = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator1.connect(gainNode);
+            oscillator2.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator1.type = 'triangle';
+            oscillator2.type = 'square';
+
+            oscillator1.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator1.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+
+            oscillator2.frequency.setValueAtTime(400, audioContext.currentTime);
+            oscillator2.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+
+            gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
+
+            oscillator1.start(audioContext.currentTime);
+            oscillator2.start(audioContext.currentTime);
+            oscillator1.stop(audioContext.currentTime + 0.2);
+            oscillator2.stop(audioContext.currentTime + 0.2);
+        }
+
+        function playGoalSound() {
+            // Yükselen bir notayla "gol" sesi
+            const duration = 0.8;
+            const startTime = audioContext.currentTime;
+
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc1.type = 'triangle';
+            osc2.type = 'sine';
+
+            osc1.frequency.setValueAtTime(440, startTime);
+            osc1.frequency.linearRampToValueAtTime(880, startTime + duration);
+
+            osc2.frequency.setValueAtTime(220, startTime);
+            osc2.frequency.linearRampToValueAtTime(440, startTime + duration);
+
+            gain.gain.setValueAtTime(0.5, startTime);
+            gain.gain.linearRampToValueAtTime(0.2, startTime + duration * 0.7);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+            osc1.start(startTime);
+            osc2.start(startTime);
+            osc1.stop(startTime + duration);
+            osc2.stop(startTime + duration);
+
+            // Kısa bir patlama sesi ekleyelim
+            setTimeout(() => {
+                const burstOsc = audioContext.createOscillator();
+                const burstGain = audioContext.createGain();
+                burstOsc.connect(burstGain);
+                burstGain.connect(audioContext.destination);
+
+                burstOsc.type = 'sawtooth';
+                burstOsc.frequency.setValueAtTime(1200, audioContext.currentTime);
+                burstGain.gain.setValueAtTime(0.7, audioContext.currentTime);
+                burstGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+
+                burstOsc.start(audioContext.currentTime);
+                burstOsc.stop(audioContext.currentTime + 0.1);
+            }, duration * 700);
+        }
+
+        function playCheerSound() {
+            if (!audioContext) return;
+
+            const duration = 1.5; // Taraftar sesinin süresi (saniye)
+            const startTime = audioContext.currentTime;
+
+            // Beyaz gürültü ile taraftar kalabalığı efekti
+            const bufferSize = audioContext.sampleRate * duration;
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const output = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1; // -1 ile 1 arasında rastgele değerler
+            }
+
+            const noiseSource = audioContext.createBufferSource();
+            noiseSource.buffer = buffer;
+            const noiseGain = audioContext.createGain();
+            noiseSource.connect(noiseGain);
+            noiseGain.connect(audioContext.destination);
+            noiseGain.gain.setValueAtTime(0.2, startTime); // Başlangıç sesi
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration); // Yavaşça sönümle
+            noiseSource.start(startTime);
+            noiseSource.stop(startTime + duration);
+
+            // Perde kayması ile "Woo!" sesi için osilatörler
+            for (let i = 0; i < 3; i++) { // Birden fazla osilatörle daha zengin ses
+                const osc = audioContext.createOscillator();
+                const oscGain = audioContext.createGain();
+                osc.connect(oscGain);
+                oscGain.connect(audioContext.destination);
+
+                const baseFrequency = 200 + i * 50; // Biraz farklı başlangıç frekansları
+                const targetFrequency = 800 + i * 100; // Biraz farklı hedef frekansları
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(baseFrequency, startTime);
+                osc.frequency.linearRampToValueAtTime(targetFrequency, startTime + duration * 0.3); // Yükselme
+                osc.frequency.exponentialRampToValueAtTime(baseFrequency * 0.5, startTime + duration * 0.8); // Düşme
+
+                oscGain.gain.setValueAtTime(0.3 + i * 0.1, startTime); // Farklı hacimler
+                oscGain.gain.linearRampToValueAtTime(0.1, startTime + duration * 0.5);
+                oscGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            }
+        }
+
+        function playButtonSound() {
+            playSound('square', 880, 0.05, 0.3); // Yüksek frekanslı kısa bip
+        }
+
+        function playShotChargeSound(power) {
+            // Power'a göre frekansı artan bir ses
+            const frequency = 200 + power * 800; // 200 Hz'den 1000 Hz'ye
+            playSound('sine', frequency, 0.05, 0.1 + power * 0.4);
+        }
+
+        function playShotReleaseSound(power) {
+            // Power'a göre daha yüksek frekanslı bir vuruş sesi
+            const frequency = 600 + power * 1500;
+            playSound('sawtooth', frequency, 0.1, 0.8 * power);
+        }
+
+        // Canvas boyutlarını ayarla
+        function resizeCanvas() {
+            if (window.innerWidth / window.innerHeight > 0.5) {
+                canvas.height = window.innerHeight;
+                canvas.width = window.innerHeight * 0.5;
+            } else {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerWidth * 2;
+            }
+            if (gameStarted) {
+                setGameElementsPositions();
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Oyun alanı ayarları
+        const fieldHeightRatio = 0.9;
+        let actualFieldHeight, fieldOffsetY;
+
+        // Oyun elemanları
+        const ball = {
+            x: 0, y: 0,
+            radius: 12, 
+            color: 'white',
+            vx: 0, vy: 0,
+            friction: 0.98
+        };
+
+        const playerRadius = 25; 
+
+        let selectedPlayer = null;
+        let isDragging = false;
+        let dragStartX = 0, dragStartY = 0;
+        let dragCurrentX = 0, dragCurrentY = 0; 
+        let dragOffsetX = 0, dragOffsetY = 0;
+        let power = 0;
+        let maxPower = 15;
+
+        // Skor değişkenleri
+        let blueScore = 0; // Bu bizim takımımızın skoru
+        let redScore = 0; // Bu rakip takımın skoru
+        const WINNING_SCORE = 5; 
+        let gameOver = false; 
+
+        // Kutlama değişkenleri
+        let celebrationTimer = 0; 
+        const CELEBRATION_DURATION = 1000; 
+        let lastGoalScorer = ''; 
+
+        // Kutlama için ses kontrolü
+        let goalSoundPlayed = false;
+        let cheerSoundPlayed = false; // Taraftar sesi için yeni bayrak
+
+        // Takımlar
+        const blueTeam = [ // Bizim takımımız (aşağıdaki)
+            { x: 0, y: 0, color: DEFAULT_BLUE_COLOR, pattern: null, originalX: 0, originalY: 0, vx: 0, vy: 0, team: 'BLUE' }, 
+            { x: 0, y: 0, color: DEFAULT_BLUE_COLOR, pattern: null, originalX: 0, originalY: 0, vx: 0, vy: 0, team: 'BLUE' },
+            { x: 0, y: 0, color: DEFAULT_BLUE_COLOR, pattern: null, originalX: 0, originalY: 0, vx: 0, vy: 0, team: 'BLUE' }
+        ];
+
+        const redTeam = [ // Rakip takım (yukarıdaki)
+            { x: 0, y: 0, color: RED_TEAM_COLOR, pattern: null, originalX: 0, originalY: 0, vx: 0, vy: 0, team: 'RED' }, 
+            { x: 0, y: 0, color: RED_TEAM_COLOR, pattern: null, originalX: 0, originalY: 0, vx: 0, vy: 0, team: 'RED' },
+            { x: 0, y: 0, color: RED_TEAM_COLOR, pattern: null, originalX: 0, originalY: 0, vx: 0, vy: 0, team: 'RED' }
+        ];
+
+        // Sıra sistemi değişkenleri
+        let currentPlayerTurn = 'BLUE'; // İlk sıra varsayılan olarak bizim takımımızda
+        let isMoveInProgress = false; 
+        const VELOCITY_THRESHOLD = 0.1; 
+        let ballTouchedThisTurn = false;
+        let isBallPlacementMode = false; 
+
+        // Alev efekti için parçacık sistemi (gol kutlaması için)
+        const fireParticles = [];
+        let fireEffectTimer = 0;
+        const FIRE_EFFECT_DURATION = 1000;
+
+        // Topun arkasındaki alev efekti için parçacık sistemi
+        const ballTrailParticles = [];
+        const BALL_TRAIL_THRESHOLD = 0.5;
+        const MAX_BALL_TRAIL_PARTICLES = 100;
+
+        // Aktif seçilen desen key'i
+        let activePatternKey = 'solid'; // Varsayılan desen
+
+        class Particle {
+            constructor(x, y, size, color, vx, vy, life, decay, type = 'fire') {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.color = color;
+                this.vx = vx;
+                this.vy = vy;
+                this.life = life; 
+                this.decay = decay; 
+                this.alpha = 1; 
+                this.type = type;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.alpha = Math.max(0, this.life / 100); 
+                this.size *= (this.type === 'fire' ? 0.98 : 0.95);
+                this.vy += (this.type === 'fire' ? 0.05 : 0.02);
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+
+                let gradient;
+                if (this.type === 'fire') {
+                    gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                    gradient.addColorStop(0, `rgba(255, 255, 200, ${this.alpha})`); 
+                    gradient.addColorStop(0.5, `rgba(255, 165, 0, ${this.alpha * 0.8})`); 
+                    gradient.addColorStop(1, `rgba(255, 0, 0, ${this.alpha * 0.5})`); 
+                } else { // 'trail' (yıldız parçacıkları için güncellendi)
+                    gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                    gradient.addColorStop(0, `rgba(255, 255, 255, ${this.alpha * 0.9})`); // Beyaz merkez
+                    gradient.addColorStop(0.3, `rgba(255, 255, 150, ${this.alpha * 0.8})`); // Açık sarı
+                    gradient.addColorStop(0.6, `rgba(255, 200, 0, ${this.alpha * 0.6})`); // Sarı
+                    gradient.addColorStop(0.9, `rgba(255, 100, 0, ${this.alpha * 0.3})`); // Turuncu
+                    gradient.addColorStop(1, `rgba(255, 0, 0, ${this.alpha * 0.1})`); // Kırmızıya doğru solma
+                }
+
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function createFireParticle(x, y, goalSide) { 
+            const size = Math.random() * 15 + 5;
+            const life = Math.random() * 80 + 20; 
+            const decay = 1;
+
+            let vx = (Math.random() - 0.5) * 5; 
+            let vy; 
+
+            if (goalSide === 'top') { 
+                vy = Math.random() * 5 + 2; 
+            } else if (goalSide === 'bottom') { 
+                vy = Math.random() * -10 - 5; 
+            } else { 
+                vy = (Math.random() - 0.5) * 4 - 3; 
+            }
+
+            fireParticles.push(new Particle(x, y, size, 'red', vx, vy, life, decay, 'fire'));
+        }
+
+        function updateFireParticles() {
+            for (let i = fireParticles.length - 1; i >= 0; i--) {
+                fireParticles[i].update();
+                if (fireParticles[i].life <= 0 || fireParticles[i].size <= 1) {
+                    fireParticles.splice(i, 1);
+                }
+            }
+        }
+
+        function drawFireParticles() {
+            fireParticles.forEach(p => p.draw());
+        }
+
+        function createBallTrailParticle(x, y, ballVx, ballVy) {
+            const speed = Math.sqrt(ballVx * ballVx + ballVy * ballVy);
+            if (speed < BALL_TRAIL_THRESHOLD) return;
+
+            const size = Math.random() * 4 + 1; // Daha küçük ve yıldız benzeri boyut
+            const life = Math.random() * 25 + 10; // Daha kısa ömür
+            const decay = 1;
+
+            const angle = Math.atan2(ballVy, ballVx);
+            const spreadAngle = Math.PI / 3; // Daha geniş dağılım
+            const particleAngle = angle + (Math.random() - 0.5) * spreadAngle;
+            const distanceOffset = -ball.radius * 0.7; // Topun biraz gerisinden başla
+
+            const startX = x + distanceOffset * Math.cos(angle);
+            const startY = y + distanceOffset * Math.sin(angle);
+
+            const vx = -ballVx * 0.1 + Math.cos(particleAngle) * (Math.random() * 3 + 1); // Hız ve rastgelelik
+            const vy = -ballVy * 0.1 + Math.sin(particleAngle) * (Math.random() * 3 + 1); // Hız ve rastgelelik
+
+            ballTrailParticles.push(new Particle(startX, startY, size, 'orange', vx, vy, life, decay, 'trail'));
+
+            while (ballTrailParticles.length > MAX_BALL_TRAIL_PARTICLES) {
+                ballTrailParticles.shift();
+            }
+        }
+
+        function updateBallTrailParticles() {
+            for (let i = ballTrailParticles.length - 1; i >= 0; i--) {
+                ballTrailParticles[i].update();
+                if (ballTrailParticles[i].life <= 0 || ballTrailParticles[i].size <= 0.5) {
+                    ballTrailParticles.splice(i, 1);
+                }
+            }
+        }
+
+        function drawBallTrailParticles() {
+            ballTrailParticles.forEach(p => p.draw());
+        }
+
+
+        // Pozisyonları ayarla
+        function setGameElementsPositions() {
+            actualFieldHeight = canvas.height * fieldHeightRatio;
+            fieldOffsetY = (canvas.height - actualFieldHeight) / 2;
+
+            ball.x = canvas.width / 2;
+            ball.y = fieldOffsetY + actualFieldHeight / 2;
+            ball.vx = 0; 
+            ball.vy = 0;
+
+            // Mavi takım (Bizim takımımız - Aşağıdaki)
+            blueTeam[0].x = blueTeam[0].originalX = canvas.width / 2;
+            blueTeam[0].y = blueTeam[0].originalY = fieldOffsetY + actualFieldHeight * 0.8;
+
+            blueTeam[1].x = blueTeam[1].originalX = canvas.width * 0.25;
+            blueTeam[1].y = blueTeam[1].originalY = fieldOffsetY + actualFieldHeight * 0.9;
+
+            blueTeam[2].x = blueTeam[2].originalX = canvas.width * 0.75;
+            blueTeam[2].y = blueTeam[2].originalY = fieldOffsetY + actualFieldHeight * 0.9;
+
+            // Kırmızı takım (Rakip takım - Yukarıdaki)
+            redTeam[0].x = redTeam[0].originalX = canvas.width / 2;
+            redTeam[0].y = redTeam[0].originalY = fieldOffsetY + actualFieldHeight * 0.2;
+
+            redTeam[1].x = redTeam[1].originalX = canvas.width * 0.25;
+            redTeam[1].y = redTeam[1].originalY = fieldOffsetY + actualFieldHeight * 0.1;
+
+            redTeam[2].x = redTeam[2].originalX = canvas.width * 0.75;
+            redTeam[2].y = redTeam[2].originalY = fieldOffsetY + actualFieldHeight * 0.1;
+        }
+
+        function getMousePos(canvas, evt) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+                y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+            };
+        }
+
+        function getTouchPos(canvas, evt) {
+            const rect = canvas.getBoundingClientRect();
+            const touch = evt.touches[0] || evt.changedTouches[0];
+            return {
+                x: (touch.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
+                y: (touch.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+            };
+        }
+
+        function findPlayerAtPos(x, y) {
+            for (let i = 0; i < blueTeam.length; i++) {
+                const player = blueTeam[i];
+                const dx = player.x - x;
+                const dy = player.y - y;
+                // playerRadius kullanılıyor
+                if (dx * dx + dy * dy < playerRadius * playerRadius) {
+                    return player;
+                }
+            }
+            for (let i = 0; i < redTeam.length; i++) {
+                const player = redTeam[i];
+                const dx = player.x - x;
+                const dy = player.y - y;
+                // playerRadius kullanılıyor
+                if (dx * dx + dy * dy < playerRadius * playerRadius) {
+                    return player;
+                }
+            }
+            return null;
+        }
+
+        function handleStart(x, y) {
+            if (gameOver || !gameStarted) return;
+
+            if (isBallPlacementMode) {
+                selectedPlayer = null;
+                ball.x = x;
+                ball.y = y;
+                isDragging = true;
+                dragOffsetX = x - ball.x;
+                dragOffsetY = y - ball.y;
+                return;
+            }
+
+            if (isMoveInProgress) return;
+
+            const player = findPlayerAtPos(x, y);
+            if (player && player.team === currentPlayerTurn) {
+                selectedPlayer = player;
+                isDragging = true;
+                dragStartX = selectedPlayer.x;
+                dragStartY = selectedPlayer.y;
+                dragOffsetX = x - selectedPlayer.x;
+                dragOffsetY = y - selectedPlayer.y;
+                dragCurrentX = x;
+                dragCurrentY = y;
+
+                powerIndicator.style.display = 'block';
+                powerIndicator.style.left = (canvas.width / 2 - powerIndicator.offsetWidth / 2) + 'px';
+                powerIndicator.style.bottom = '30px';
+                powerIndicator.style.top = 'auto';
+            }
+        }
+
+        function handleMove(x, y) {
+            if (!gameStarted) return;
+
+            if (isBallPlacementMode && isDragging) {
+                ball.x = x - dragOffsetX;
+                ball.y = y - dragOffsetY;
+
+                const fieldLeft = 0;
+                const fieldRight = canvas.width;
+                const fieldTop = fieldOffsetY;
+                const fieldBottom = fieldOffsetY + actualFieldHeight;
+
+                ball.x = Math.max(ball.radius, Math.min(canvas.width - ball.radius, ball.x));
+                ball.y = Math.max(fieldTop + ball.radius, Math.min(fieldBottom - ball.radius, ball.y));
+
+                power = 0;
+                powerFill.style.width = '0%';
+                return;
+            }
+
+            if (isDragging && selectedPlayer) {
+                dragCurrentX = x;
+                dragCurrentY = y;
+
+                const dx = x - selectedPlayer.x - dragOffsetX;
+                const dy = y - selectedPlayer.y - dragOffsetY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                power = Math.min(distance / 100, 1);
+                powerFill.style.width = (power * 100) + '%';
+                playShotChargeSound(power); // Atış gücüne göre ses çal
+            }
+        }
+
+        function handleEnd(x, y) {
+            if (!gameStarted) return;
+
+            if (isBallPlacementMode && isDragging) {
+                isBallPlacementMode = false;
+                isDragging = false;
+                powerIndicator.style.display = 'none';
+                // Sıra yerleştirmeden sonra değişecek
+                currentPlayerTurn = (currentPlayerTurn === 'BLUE') ? 'RED' : 'BLUE';
+                return;
+            }
+
+            if (isDragging && selectedPlayer) {
+                const dx = selectedPlayer.x - (x - dragOffsetX);
+                const dy = selectedPlayer.y - (y - dragOffsetY);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 5) {
+                    const angle = Math.atan2(dy, dx);
+                    const force = Math.min(distance / 5, maxPower);
+
+                    selectedPlayer.vx = Math.cos(angle) * force;
+                    selectedPlayer.vy = Math.sin(angle) * force;
+                    isMoveInProgress = true;
+                    ballTouchedThisTurn = false;
+                    playShotReleaseSound(power); // Atış bırakıldığında ses çal
+                }
+                powerIndicator.style.display = 'none';
+                power = 0;
+                powerFill.style.width = '0%';
+            }
+            isDragging = false;
+            selectedPlayer = null;
+        }
+
+        function enableGameInput() {
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('mouseleave', handleMouseLeave);
+
+            canvas.addEventListener('touchstart', handleTouchStart);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchend', handleTouchEnd);
+        }
+
+        function disableGameInput() {
+            canvas.removeEventListener('mousedown', handleMouseDown);
+            canvas.removeEventListener('mousemove', handleMouseMove);
+            canvas.removeEventListener('mouseup', handleMouseUp);
+            canvas.removeEventListener('mouseleave', handleMouseLeave);
+
+            canvas.removeEventListener('touchstart', handleTouchStart);
+            canvas.removeEventListener('touchmove', handleTouchMove);
+            canvas.removeEventListener('touchend', handleTouchEnd);
+        }
+
+        function handleMouseDown(e) {
+            const pos = getMousePos(canvas, e);
+            handleStart(pos.x, pos.y);
+        }
+
+        function handleMouseMove(e) {
+            const pos = getMousePos(canvas, e);
+            handleMove(pos.x, pos.y);
+        }
+
+        function handleMouseUp(e) {
+            const pos = getMousePos(canvas, e);
+            handleEnd(pos.x, pos.y);
+        }
+
+        function handleMouseLeave() {
+            if (isDragging) {
+                handleEnd(0, 0); 
+            }
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault(); 
+            const pos = getTouchPos(canvas, e);
+            handleStart(pos.x, pos.y);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const pos = getTouchPos(canvas, e);
+            handleMove(pos.x, pos.y);
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            if (e.changedTouches.length > 0) { 
+                const pos = getTouchPos(canvas, e);
+                handleEnd(pos.x, pos.y);
+            } else {
+                handleEnd(0, 0); 
+            }
+        }
+
+        // Oyuncuları ve topu başlangıç pozisyonlarına sıfırla
+        function resetGameElements() {
+            [...blueTeam, ...redTeam].forEach(player => {
+                player.x = player.originalX;
+                player.y = player.originalY;
+                player.vx = 0;
+                player.vy = 0;
+            });
+            ball.x = canvas.width / 2;
+            ball.y = fieldOffsetY + actualFieldHeight / 2;
+            ball.vx = 0;
+            ball.vy = 0;
+            isMoveInProgress = false; 
+            isBallPlacementMode = false;
+            ballTouchedThisTurn = false;
+            ballTrailParticles.length = 0;
+            goalSoundPlayed = false; // Yeni turda gol sesi tekrar çalabilir
+            cheerSoundPlayed = false; // Yeni turda taraftar sesi tekrar çalabilir
+        }
+
+        function updatePlayers() {
+            const allPlayers = [...blueTeam, ...redTeam];
+
+            allPlayers.forEach(player => {
+                player.x += player.vx;
+                player.y += player.vy;
+                
+                player.vx *= 0.97; 
+                player.vy *= 0.97;
+                
+                const fieldLeft = 0;
+                const fieldRight = canvas.width;
+                const fieldTop = fieldOffsetY;
+                const fieldBottom = fieldOffsetY + actualFieldHeight;
+
+                if (player.x - playerRadius < fieldLeft) {
+                    player.x = fieldLeft + playerRadius;
+                    player.vx *= -0.7; 
+                    playCollisionSound(); // Duvar sesi
+                }
+                if (player.x + playerRadius > fieldRight) {
+                    player.x = fieldRight - playerRadius;
+                    player.vx *= -0.7;
+                    playCollisionSound(); // Duvar sesi
+                }
+                if (player.y - playerRadius < fieldTop) {
+                    player.y = fieldTop + playerRadius;
+                    player.vy *= -0.7;
+                    playCollisionSound(); // Duvar sesi
+                }
+                if (player.y + playerRadius > fieldBottom) {
+                    player.y = fieldBottom - playerRadius;
+                    player.vy *= -0.7;
+                    playCollisionSound(); // Duvar sesi
+                }
+                
+                const dx_pb = ball.x - player.x;
+                const dy_pb = ball.y - player.y;
+                const distance_pb = Math.sqrt(dx_pb * dx_pb + dy_pb * dy_pb);
+
+                if (distance_pb < playerRadius + ball.radius) {
+                    ballTouchedThisTurn = true;
+                    playCollisionSound(0.9); // Top-oyuncu çarpışma sesi
+                    const overlap_pb = (playerRadius + ball.radius) - distance_pb;
+                    const normalX_pb = dx_pb / distance_pb;
+                    const normalY_pb = dy_pb / distance_pb;
+
+                    ball.x += normalX_pb * overlap_pb * 0.5;
+                    ball.y += normalY_pb * overlap_pb * 0.5;
+                    player.x -= normalX_pb * overlap_pb * 0.5;
+                    player.y -= normalY_pb * overlap_pb * 0.5;
+
+                    const relativeVx_pb = ball.vx - player.vx;
+                    const relativeVy_pb = ball.vy - player.vy;
+                    const speedAlongNormal_pb = relativeVx_pb * normalX_pb + relativeVy_pb * normalY_pb;
+
+                    if (speedAlongNormal_pb > 0) {
+                        return;
+                    }
+
+                    const restitution = 0.8;
+                    const impulse_pb = -(1 + restitution) * speedAlongNormal_pb;
+
+                    ball.vx += impulse_pb * normalX_pb;
+                    ball.vy += impulse_pb * normalY_pb;
+                    player.vx -= impulse_pb * normalX_pb * 0.5; 
+                    player.vy -= impulse_pb * normalY_pb * 0.5;
+                }
+            });
+
+            for (let i = 0; i < allPlayers.length; i++) {
+                for (let j = i + 1; j < allPlayers.length; j++) {
+                    const player1 = allPlayers[i];
+                    const player2 = allPlayers[j];
+
+                    const dx_pp = player2.x - player1.x;
+                    const dy_pp = player2.y - player1.y;
+                    const distance_pp = Math.sqrt(dx_pp * dx_pp + dy_pp * dy_pp);
+
+                    if (distance_pp < playerRadius * 2) {
+                        playCollisionSound(0.5); // Oyuncu-oyuncu çarpışma sesi
+                        const overlap_pp = (playerRadius * 2) - distance_pp;
+                        const normalX_pp = dx_pp / distance_pp;
+                        const normalY_pp = dy_pp / distance_pp;
+
+                        player1.x -= normalX_pp * overlap_pp * 0.5;
+                        player1.y -= normalY_pp * overlap_pp * 0.5;
+                        player2.x += normalX_pp * overlap_pp * 0.5;
+                        player2.y += normalY_pp * overlap_pp * 0.5;
+
+                        const relativeVx_pp = player2.vx - player1.vx;
+                        const relativeVy_pp = player2.vy - player1.vy;
+                        const speedAlongNormal_pp = relativeVx_pp * normalX_pp + relativeVy_pp * normalY_pp;
+
+                        if (speedAlongNormal_pp > 0) {
+                            continue;
+                        }
+
+                        const restitution_pp = 0.7;
+                        const impulse_pp = -(1 + restitution_pp) * speedAlongNormal_pp;
+
+                        player1.vx -= impulse_pp * normalX_pp;
+                        player1.vy -= impulse_pp * normalY_pp;
+                        player2.vx += impulse_pp * normalX_pp;
+                        player2.vy += impulse_pp * normalY_pp;
+                    }
+                }
+            }
+        }
+
+        function updateBall() {
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+            ball.vx *= ball.friction;
+            ball.vy *= ball.friction;
+            
+            const fieldLeft = 0;
+            const fieldRight = canvas.width;
+            const fieldTop = fieldOffsetY;
+            const fieldBottom = fieldOffsetY + actualFieldHeight;
+
+            const goalWidth = canvas.width * 0.3;
+            const topGoalX1 = canvas.width / 2 - goalWidth / 2;
+            const topGoalX2 = canvas.width / 2 + goalWidth / 2;
+            const bottomGoalX1 = canvas.width / 2 - goalWidth / 2;
+            const bottomGoalX2 = canvas.width / 2 + goalWidth / 2;
+
+            if (ball.x - ball.radius < fieldLeft) {
+                ball.x = fieldLeft + ball.radius;
+                ball.vx *= -0.8;
+                playCollisionSound(0.6); // Duvar sesi
+            }
+            if (ball.x + ball.radius > fieldRight) {
+                ball.x = fieldRight - ball.radius;
+                ball.vx *= -0.8;
+                playCollisionSound(0.6); // Duvar sesi
+            }
+            
+            if (ball.y - ball.radius < fieldTop) {
+                if (!(ball.x > topGoalX1 && ball.x < topGoalX2)) { 
+                    ball.y = fieldTop + ball.radius;
+                    ball.vy *= -0.8;
+                    playCollisionSound(0.6); // Duvar sesi
+                }
+            }
+
+            if (ball.y + ball.radius > fieldBottom) {
+                if (!(ball.x > bottomGoalX1 && ball.x < bottomGoalX2)) { 
+                    ball.y = fieldBottom - ball.radius;
+                    ball.vy *= -0.8;
+                    playCollisionSound(0.6); // Duvar sesi
+                }
+            }
+
+            const ballSpeed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+            if (ballSpeed > BALL_TRAIL_THRESHOLD) {
+                createBallTrailParticle(ball.x, ball.y, ball.vx, ball.vy);
+            }
+        }
+
+        function drawField() {
+            const grassGradient = ctx.createLinearGradient(0, fieldOffsetY, 0, fieldOffsetY + actualFieldHeight);
+            grassGradient.addColorStop(0, '#5cb85c'); 
+            grassGradient.addColorStop(0.5, '#4CAF50'); 
+            grassGradient.addColorStop(1, '#5cb85c');
+            ctx.fillStyle = grassGradient;
+            ctx.fillRect(0, fieldOffsetY, canvas.width, actualFieldHeight);
+
+            if (!isMoveInProgress && !gameOver && !isBallPlacementMode) {
+                const pulse = Math.abs(Math.sin(Date.now() * 0.003)) * 0.2; 
+                // Mavi Takım bizim takımımız (aşağıdaki kısım)
+                if (currentPlayerTurn === 'BLUE') {
+                    ctx.fillStyle = `rgba(30, 144, 255, ${0.1 + pulse})`; 
+                    ctx.fillRect(0, fieldOffsetY + actualFieldHeight / 2, canvas.width, actualFieldHeight / 2);
+                } else if (currentPlayerTurn === 'RED') { // Kırmızı Takım rakip takım (yukarıdaki kısım)
+                    ctx.fillStyle = `rgba(255, 69, 0, ${0.1 + pulse})`; 
+                    ctx.fillRect(0, fieldOffsetY, canvas.width, actualFieldHeight / 2);
+                }
+            }
+
+            const stripCount = 12; 
+            const stripHeight = actualFieldHeight / stripCount;
+            for (let i = 0; i < stripCount; i++) {
+                if (i % 2 === 0) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
+                } else {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; 
+                }
+                ctx.fillRect(0, fieldOffsetY + i * stripHeight, canvas.width, stripHeight);
+            }
+
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 4; 
+
+            ctx.strokeRect(0, fieldOffsetY, canvas.width, actualFieldHeight);
+
+            ctx.beginPath();
+            ctx.moveTo(0, fieldOffsetY + actualFieldHeight / 2);
+            ctx.lineTo(canvas.width, fieldOffsetY + actualFieldHeight / 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, fieldOffsetY + actualFieldHeight / 2, actualFieldHeight * 0.08, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, fieldOffsetY + actualFieldHeight / 2, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+
+            // Yukarıdaki kale çizgileri (Rakip)
+            ctx.strokeRect(canvas.width * 0.1, fieldOffsetY + actualFieldHeight * 0.05, canvas.width * 0.8, actualFieldHeight * 0.2);
+            ctx.strokeRect(canvas.width * 0.3, fieldOffsetY + actualFieldHeight * 0.1, canvas.width * 0.4, actualFieldHeight * 0.1);
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, fieldOffsetY + actualFieldHeight * 0.2, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Aşağıdaki kale çizgileri (Bizim)
+            ctx.strokeRect(canvas.width * 0.1, fieldOffsetY + actualFieldHeight * 0.75, canvas.width * 0.8, actualFieldHeight * 0.2);
+            ctx.strokeRect(canvas.width * 0.3, fieldOffsetY + actualFieldHeight * 0.8, canvas.width * 0.4, actualFieldHeight * 0.1);
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, fieldOffsetY + actualFieldHeight * 0.8, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            const goalWidth = canvas.width * 0.3;
+            const goalHeight = canvas.height * 0.04;
+            const goalPostColor = '#E0E0E0'; 
+            const netColor = 'rgba(255, 255, 255, 0.9)'; 
+
+            // Yukarıdaki kale (Rakip kale)
+            ctx.fillStyle = goalPostColor;
+            ctx.fillRect(canvas.width / 2 - goalWidth / 2, fieldOffsetY - goalHeight, goalWidth, goalHeight);
+            
+            ctx.strokeStyle = netColor;
+            ctx.lineWidth = 2; 
+            const netSpacing = 6; 
+
+            for (let x = canvas.width / 2 - goalWidth / 2; x <= canvas.width / 2 + goalWidth / 2; x += netSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, fieldOffsetY - goalHeight);
+                ctx.lineTo(x, fieldOffsetY);
+                ctx.stroke();
+            }
+            for (let y = fieldOffsetY - goalHeight; y <= fieldOffsetY; y += netSpacing) { // Y ekseni çizgileri
+                ctx.beginPath();
+                ctx.moveTo(canvas.width / 2 - goalWidth / 2, y);
+                ctx.lineTo(canvas.width / 2 + goalWidth / 2, y);
+                ctx.stroke();
+            }
+
+            // Aşağıdaki kale (Bizim kale)
+            ctx.fillStyle = goalPostColor;
+            ctx.fillRect(canvas.width / 2 - goalWidth / 2, fieldOffsetY + actualFieldHeight, goalWidth, goalHeight);
+
+            ctx.strokeStyle = netColor;
+            ctx.lineWidth = 2;
+            for (let x = canvas.width / 2 - goalWidth / 2; x <= canvas.width / 2 + goalWidth / 2; x += netSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, fieldOffsetY + actualFieldHeight);
+                ctx.lineTo(x, fieldOffsetY + actualFieldHeight + goalHeight);
+                ctx.stroke();
+            }
+            for (let y = fieldOffsetY + actualFieldHeight; y <= fieldOffsetY + actualFieldHeight + goalHeight; y += netSpacing) { // Y ekseni çizgileri
+                ctx.beginPath();
+                ctx.moveTo(canvas.width / 2 - goalWidth / 2, y);
+                ctx.lineTo(canvas.width / 2 + goalWidth / 2, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawBall() {
+            const x = ball.x;
+            const y = ball.y;
+            const r = ball.radius;
+
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2, false);
+            const ballGradient = ctx.createRadialGradient(x - r * 0.4, y - r * 0.4, r * 0.1, x, y, r);
+            ballGradient.addColorStop(0, '#FFFFFF'); 
+            ballGradient.addColorStop(0.6, '#F0F0F0'); 
+            ballGradient.addColorStop(1, '#CCCCCC'); 
+            ctx.fillStyle = ballGradient;
+            ctx.fill();
+            ctx.strokeStyle = '#333'; 
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#000'; 
+            const angleStep = Math.PI * 2 / 6;
+
+            for (let i = 0; i < 6; i++) {
+                const angle = angleStep * i;
+                const nextAngle = angleStep * (i + 1);
+
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + r * Math.cos(angle) * 0.8, y + r * Math.sin(angle) * 0.8); 
+                ctx.lineTo(x + r * Math.cos(nextAngle) * 0.8, y + r * Math.sin(nextAngle) * 0.8);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.35, 0, Math.PI * 2, false);
+            ctx.fillStyle = '#FFF';
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(x - r * 0.5, y - r * 0.5, r * 0.25, 0, Math.PI * 2, false);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; 
+            ctx.fill();
+        }
+
+        // --- Uniform Pattern Definitions ---
+        const jerseyPatterns = {
+            "solid": (pCtx, pSize, blueColor) => {
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+            },
+            "jersey1": (pCtx, pSize, blueColor) => { // Mavi & Beyaz Çubuklar
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+                pCtx.fillStyle = '#FFFFFF';
+                const stripeWidth = pSize / 6;
+                for (let i = 0; i < 3; i++) {
+                    pCtx.fillRect(i * 2 * stripeWidth, 0, stripeWidth, pSize);
+                }
+            },
+            "jersey2": (pCtx, pSize, blueColor) => { // Mavi & Sarı Şerit
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+                pCtx.fillStyle = '#FFD700'; // Gold
+                pCtx.fillRect(0, pSize * 0.4, pSize, pSize * 0.2);
+            },
+            "jersey3": (pCtx, pSize, blueColor) => { // Mavi & Turuncu Yarım
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+                pCtx.fillStyle = '#FF8C00'; // Dark Orange
+                pCtx.beginPath();
+                pCtx.arc(pSize / 2, pSize / 2, pSize / 2, Math.PI / 2, Math.PI * 3 / 2, false);
+                pCtx.fill();
+            },
+            "jersey4": (pCtx, pSize, blueColor) => { // Mavi & Yeşil Kareler
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+                pCtx.fillStyle = '#32CD32'; // Lime Green
+                const squareSize = pSize / 3;
+                pCtx.fillRect(0, 0, squareSize, squareSize);
+                pCtx.fillRect(squareSize * 2, 0, squareSize, squareSize);
+                pCtx.fillRect(squareSize, squareSize, squareSize, squareSize);
+                pCtx.fillRect(0, squareSize * 2, squareSize, squareSize);
+                pCtx.fillRect(squareSize * 2, squareSize * 2, squareSize, squareSize);
+            },
+            "jersey5": (pCtx, pSize, blueColor) => { // Mavi & Gri Zigzag
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+                pCtx.strokeStyle = '#A9A9A9'; // Dark Gray
+                pCtx.lineWidth = 4;
+                pCtx.beginPath();
+                pCtx.moveTo(0, pSize * 0.2);
+                pCtx.lineTo(pSize * 0.5, pSize * 0.8);
+                pCtx.lineTo(pSize, pSize * 0.2);
+                pCtx.moveTo(0, pSize * 0.8);
+                pCtx.lineTo(pSize * 0.5, pSize * 0.2);
+                pCtx.lineTo(pSize, pSize * 0.8);
+                pCtx.stroke();
+            },
+            "jersey6": (pCtx, pSize, blueColor) => { // Mavi & Mor Noktalar
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+                pCtx.fillStyle = '#8A2BE2'; // Blue Violet
+                const dotRadius = pSize / 10;
+                for (let x = dotRadius; x < pSize; x += dotRadius * 3) {
+                    for (let y = dotRadius; y < pSize; y += dotRadius * 3) {
+                        pCtx.beginPath();
+                        pCtx.arc(x, y, dotRadius, 0, Math.PI * 2);
+                        pCtx.fill();
+                    }
+                }
+            },
+            "jersey7": (pCtx, pSize, blueColor) => { // Mavi & Kırmızı Dalgalar
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+                pCtx.strokeStyle = '#DC143C'; // Crimson
+                pCtx.lineWidth = 3;
+                for (let i = 0; i < 3; i++) {
+                    pCtx.beginPath();
+                    pCtx.moveTo(0, i * pSize / 3);
+                    pCtx.bezierCurveTo(pSize / 3, i * pSize / 3 + pSize / 6, pSize * 2 / 3, i * pSize / 3 - pSize / 6, pSize, i * pSize / 3);
+                    pCtx.stroke();
+                }
+            },
+            "jersey8": (pCtx, pSize, blueColor) => { // Mavi & Cyan Gradyan
+                const gradient = pCtx.createLinearGradient(0, 0, pSize, pSize);
+                gradient.addColorStop(0, blueColor);
+                gradient.addColorStop(1, '#00FFFF'); // Cyan
+                pCtx.fillStyle = gradient;
+                pCtx.fillRect(0, 0, pSize, pSize);
+            },
+            "jersey9": (pCtx, pSize, blueColor) => { // Mavi & Pembe Parçalı
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+                pCtx.fillStyle = '#FF69B4'; // Hot Pink
+                pCtx.beginPath();
+                pCtx.moveTo(0, pSize * 0.7);
+                pCtx.lineTo(pSize * 0.3, pSize);
+                pCtx.lineTo(pSize, pSize * 0.3);
+                pCtx.lineTo(pSize * 0.7, 0);
+                pCtx.closePath();
+                pCtx.fill();
+            },
+            "jersey10": (pCtx, pSize, blueColor) => { // Mavi & Kahverengi Çapraz
+                pCtx.fillStyle = blueColor;
+                pCtx.fillRect(0, 0, pSize, pSize);
+                pCtx.strokeStyle = '#A52A2A'; // Brown
+                pCtx.lineWidth = 5;
+                pCtx.beginPath();
+                pCtx.moveTo(0, 0);
+                pCtx.lineTo(pSize, pSize);
+                pCtx.moveTo(pSize, 0);
+                pCtx.lineTo(0, pSize);
+                pCtx.stroke();
+            }
+        };
+
+        // Bu fonksiyon, bir desenin küçük bir önizlemesini çizecek bir CanvasPattern döndürür.
+        function createPatternCanvas(patternKey, size = playerRadius * 2, primaryColor = DEFAULT_BLUE_COLOR) {
+            const patternCanvas = document.createElement('canvas');
+            const patternCtx = patternCanvas.getContext('2d');
+            patternCanvas.width = size;
+            patternCanvas.height = size;
+
+            // Arka planı temizle
+            patternCtx.clearRect(0, 0, size, size);
+
+            // Deseni çiz
+            const patternFn = jerseyPatterns[patternKey];
+            if (patternFn) {
+                patternFn(patternCtx, size, primaryColor);
+            } else {
+                // Varsayılan düz renk
+                patternCtx.fillStyle = primaryColor;
+                pCtx.fillRect(0, 0, size, size);
+            }
+            return patternCtx.createPattern(patternCanvas, 'repeat');
+        }
+
+        // Oyuncuların desenlerini güncelle
+        function updateTeamPatterns() {
+            blueTeam.forEach(player => {
+                player.color = DEFAULT_BLUE_COLOR; // Ana rengi varsayılan mavi olarak tut
+                player.pattern = createPatternCanvas(activePatternKey, playerRadius * 2, DEFAULT_BLUE_COLOR);
+            });
+        }
+
+        function drawPlayers() {
+            const allTeams = [blueTeam, redTeam];
+
+            allTeams.forEach(team => {
+                team.forEach(player => {
+                    const x = player.x;
+                    const y = player.y;
+                    const r = playerRadius; // Sabit playerRadius kullanılıyor
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+
+                    if (player.pattern) {
+                        ctx.fillStyle = player.pattern;
+                    } else {
+                        // Eğer desen yoksa (solid seçiliyse), player'ın color özelliğini kullan
+                        ctx.fillStyle = player.color; 
+                    }
+                    ctx.fill();
+
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)'; 
+                    ctx.shadowOffsetX = 2; 
+                    ctx.shadowOffsetY = 2; 
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill(); 
+
+                    ctx.shadowBlur = 0;
+                    ctx.shadowColor = 'transparent';
+
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; 
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, r * 0.65, 0, Math.PI * 2);
+                    const innerGradient = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 0.65);
+                    innerGradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)'); 
+                    innerGradient.addColorStop(1, 'rgba(255, 255, 255, 0.2)'); 
+
+                    ctx.fillStyle = innerGradient;
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; 
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(x - r * 0.4, y - r * 0.4, r * 0.25, 0, Math.PI * 2); 
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; 
+                    ctx.fill();
+
+                    if (player === selectedPlayer) {
+                        const pulse = Math.abs(Math.sin(Date.now() * 0.005)) * 4; 
+                        ctx.beginPath();
+                        ctx.arc(x, y, r + 6 + pulse, 0, Math.PI * 2); 
+                        ctx.strokeStyle = '#FFFF00'; 
+                        ctx.lineWidth = 5 + pulse / 2; 
+                        ctx.shadowBlur = 15 + pulse * 2; 
+                        ctx.shadowColor = 'rgba(255, 255, 0, 0.9)'; 
+                        ctx.stroke();
+                        
+                        ctx.shadowBlur = 0;
+                        ctx.shadowColor = 'transparent';
+                    }
+                });
+            });
+
+            if (isDragging && selectedPlayer && !isBallPlacementMode) {
+                const playerX = selectedPlayer.x;
+                const playerY = selectedPlayer.y;
+
+                const dx = playerX - (dragCurrentX - dragOffsetX);
+                const dy = playerY - (dragCurrentY - dragOffsetY);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                const maxArrowLength = playerRadius * 5; // playerRadius kullanılıyor
+                const arrowLength = Math.min(distance, maxArrowLength);
+
+                if (arrowLength > 0) {
+                    const angle = Math.atan2(dy, dx);
+                    const startX = playerX + Math.cos(angle) * (playerRadius + 2); // playerRadius kullanılıyor
+                    const startY = playerY + Math.sin(angle) * (playerRadius + 2); // playerRadius kullanılıyor
+                    const endX = playerX + Math.cos(angle) * (playerRadius + 2 + arrowLength); // playerRadius kullanılıyor
+                    const endY = playerY + Math.sin(angle) * (playerRadius + 2 + arrowLength); // playerRadius kullanılıyor
+
+                    const arrowGradient = ctx.createLinearGradient(startX, startY, endX, endY);
+                    arrowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)'); 
+                    arrowGradient.addColorStop(0.7, '#FFD700'); 
+                    arrowGradient.addColorStop(1, '#FFA500'); 
+
+                    ctx.strokeStyle = arrowGradient;
+                    ctx.lineWidth = 7; 
+                    ctx.lineCap = 'round';
+                    ctx.shadowBlur = 10; 
+                    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)'; 
+
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                    
+                    ctx.shadowBlur = 0;
+                    ctx.shadowColor = 'transparent';
+
+                    const arrowHeadSize = 22; 
+                    ctx.fillStyle = '#FFD700'; 
+                    ctx.strokeStyle = '#FFA500'; 
+                    ctx.lineWidth = 2; 
+
+                    ctx.beginPath();
+                    ctx.moveTo(endX, endY);
+                    ctx.lineTo(endX - arrowHeadSize * Math.cos(angle - Math.PI / 7), endY - arrowHeadSize * Math.sin(angle - Math.PI / 7));
+                    ctx.lineTo(endX - arrowHeadSize * Math.cos(angle + Math.PI / 7), endY - arrowHeadSize * Math.sin(angle + Math.PI / 7));
+                    ctx.closePath(); 
+                    ctx.fill(); 
+                    ctx.stroke(); 
+
+                    ctx.beginPath();
+                    ctx.arc(endX, endY, arrowHeadSize * 0.8, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.4)'; 
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(endX, endY, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = '#FFFFFF'; 
+                    ctx.fill();
+                }
+            }
+        }
+
+        function checkGoals() {
+            if (gameOver) return; 
+
+            const goalWidth = canvas.width * 0.3;
+            const goalHeight = canvas.height * 0.04; 
+
+            const topGoalX1 = canvas.width / 2 - goalWidth / 2;
+            const topGoalX2 = canvas.width / 2 + goalWidth / 2;
+            const topGoalY1_detect = fieldOffsetY - goalHeight - ball.radius * 2; 
+            const topGoalY2_detect = fieldOffsetY + ball.radius;                 
+
+            const bottomGoalX1 = canvas.width / 2 - goalWidth / 2;
+            const bottomGoalX2 = canvas.width / 2 + goalWidth / 2;
+            const bottomGoalY1_detect = fieldOffsetY + actualFieldHeight - ball.radius; 
+            const bottomGoalY2_detect = fieldOffsetY + actualFieldHeight + goalHeight + ball.radius * 2; 
+
+            // Top kaleye girerse: Kırmızı Takım gol atar (yani rakip takım gol yer)
+            if (ball.x > topGoalX1 && ball.x < topGoalX2 &&
+                ball.y > topGoalY1_detect && ball.y < topGoalY2_detect) { 
+                console.log("Mavi Takım gol attı!"); // Bizim takımımız gol attı
+                blueScore++; 
+                celebrationTimer = CELEBRATION_DURATION; 
+                lastGoalScorer = 'BLUE'; // Bizim takımımız gol attı
+                fireEffectTimer = FIRE_EFFECT_DURATION; 
+                startFireEffect('top'); 
+                if (!goalSoundPlayed) { // Gol sesini bir kez çal
+                    playGoalSound();
+                    goalSoundPlayed = true;
+                }
+                if (!cheerSoundPlayed) { // Taraftar sesini bir kez çal
+                    playCheerSound();
+                    cheerSoundPlayed = true;
+                }
+                resetGameElements(); 
+                if (blueScore >= WINNING_SCORE) {
+                    gameOver = true;
+                } else {
+                    // Gol yiyen takım başlar: Kırmızı (rakip)
+                    currentPlayerTurn = 'RED'; 
+                }
+            }
+
+            // Top bizim kaleye girerse: Mavi Takım gol yer (yani rakip takım gol atar)
+            if (ball.x > bottomGoalX1 && ball.x < bottomGoalX2 &&
+                ball.y > bottomGoalY1_detect && ball.y < bottomGoalY2_detect) { 
+                console.log("Kırmızı Takım gol attı!"); // Rakip takım gol attı
+                redScore++; 
+                celebrationTimer = CELEBRATION_DURATION; 
+                lastGoalScorer = 'RED'; // Rakip takım gol attı
+                fireEffectTimer = FIRE_EFFECT_DURATION; 
+                startFireEffect('bottom'); 
+                if (!goalSoundPlayed) { // Gol sesini bir kez çal
+                    playGoalSound();
+                    goalSoundPlayed = true;
+                }
+                if (!cheerSoundPlayed) { // Taraftar sesini bir kez çal
+                    playCheerSound();
+                    cheerSoundPlayed = true;
+                }
+                resetGameElements(); 
+                if (redScore >= WINNING_SCORE) {
+                    gameOver = true;
+                } else {
+                    // Gol yiyen takım başlar: Mavi (bizim)
+                    currentPlayerTurn = 'BLUE'; 
+                }
+            }
+        }
+
+        function checkMoveCompletion() {
+            if (!isMoveInProgress || gameOver) return;
+
+            const allMovingObjects = [...blueTeam, ...redTeam, ball];
+            let allStopped = true;
+
+            for (const obj of allMovingObjects) {
+                const speed = Math.sqrt(obj.vx * obj.vx + obj.vy * obj.vy);
+                if (speed > VELOCITY_THRESHOLD) {
+                    allStopped = false;
+                    break;
+                }
+            }
+
+            if (allStopped) {
+                isMoveInProgress = false;
+
+                if (!ballTouchedThisTurn) {
+                    console.log(`${currentPlayerTurn} takımı topa değdiremedi. Rakip topu yerleştirme hakkı kazandı.`);
+                    isBallPlacementMode = true;
+                    powerIndicator.style.display = 'none';
+                    playSound('sine', 150, 0.3, 0.4); // Hata sesi
+                } else {
+                    if (!gameOver) {
+                        // Sadece top normal şekilde değdiyse sırayı değiştir (gol yiyen takım başlıyor kuralı bunu etkilemez)
+                        currentPlayerTurn = (currentPlayerTurn === 'BLUE') ? 'RED' : 'BLUE';
+                    }
+                }
+                ballTouchedThisTurn = false;
+            }
+        }
+
+        function drawScore() {
+            const scorePanelWidth = canvas.width * 0.2;
+            const scorePanelHeight = canvas.height * 0.15;
+            const scorePanelX = canvas.width * 0.05; 
+            const scorePanelY = canvas.height / 2 - scorePanelHeight / 2; 
+            const cornerRadius = 15;
+
+            const panelGradient = ctx.createLinearGradient(scorePanelX, scorePanelY, scorePanelX + scorePanelWidth, scorePanelY + scorePanelHeight);
+            panelGradient.addColorStop(0, 'rgba(50, 50, 50, 0.7)');   
+            panelGradient.addColorStop(0.5, 'rgba(100, 100, 100, 0.6)'); 
+            panelGradient.addColorStop(1, 'rgba(50, 50, 50, 0.7)');   
+            ctx.fillStyle = panelGradient;
+            ctx.roundRect(scorePanelX, scorePanelY, scorePanelWidth, scorePanelHeight, cornerRadius);
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 3; 
+            ctx.shadowBlur = 15; 
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+            ctx.roundRect(scorePanelX, scorePanelY, scorePanelWidth, scorePanelHeight, cornerRadius);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.roundRect(scorePanelX + 3, scorePanelY + 3, scorePanelWidth - 6, scorePanelHeight * 0.4, cornerRadius - 5);
+            const reflectionGradient = ctx.createLinearGradient(scorePanelX, scorePanelY, scorePanelX, scorePanelY + scorePanelHeight * 0.4);
+            reflectionGradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)'); 
+            reflectionGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');   
+            ctx.fillStyle = reflectionGradient;
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+
+            ctx.font = `${canvas.height * 0.05}px 'Orbitron', sans-serif`; 
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Kırmızı takım (Rakip) skoru yukarıda
+            ctx.fillStyle = RED_TEAM_COLOR; 
+            ctx.shadowColor = 'rgba(255, 69, 0, 0.9)'; 
+            ctx.shadowBlur = 12; 
+            ctx.fillText(redScore, scorePanelX + scorePanelWidth / 2, scorePanelY + scorePanelHeight * 0.35); 
+            
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; 
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.7)'; 
+            ctx.beginPath();
+            ctx.moveTo(scorePanelX + scorePanelWidth * 0.1, scorePanelY + scorePanelHeight / 2);
+            ctx.lineTo(scorePanelX + scorePanelWidth * 0.9, scorePanelY + scorePanelHeight / 2);
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+
+            // Mavi takım (Bizim) skoru aşağıda
+            ctx.fillStyle = DEFAULT_BLUE_COLOR; 
+            ctx.shadowColor = 'rgba(0, 191, 255, 0.9)'; 
+            ctx.shadowBlur = 12; 
+            ctx.fillText(blueScore, scorePanelX + scorePanelWidth / 2, scorePanelY + scorePanelHeight * 0.65); 
+
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+        }
+
+        function drawCelebration() {
+            if (celebrationTimer > 0) {
+                let opacity = 0;
+                if (celebrationTimer > CELEBRATION_DURATION / 2) {
+                    opacity = 1 - (celebrationTimer - CELEBRATION_DURATION / 2) / (CELEBRATION_DURATION / 2);
+                } else {
+                    opacity = celebrationTimer / (CELEBRATION_DURATION / 2);
+                }
+                opacity = Math.max(0, Math.min(1, opacity)); 
+
+                const flashAlpha = (celebrationTimer / CELEBRATION_DURATION) * 0.4; 
+                if (flashAlpha > 0) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+
+                ctx.save(); 
+                ctx.globalAlpha = opacity; 
+
+                const fontSize = canvas.height * 0.08;
+                ctx.font = `${fontSize}px 'Orbitron', sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                let textColor = 'white';
+                let shadowColor = 'rgba(255, 255, 0, 0.8)'; 
+                if (lastGoalScorer === 'BLUE') { // Bizim takımımız gol attı
+                    textColor = DEFAULT_BLUE_COLOR; 
+                    shadowColor = 'rgba(0, 191, 255, 0.9)'; 
+                } else if (lastGoalScorer === 'RED') { // Rakip takım gol attı
+                    textColor = RED_TEAM_COLOR; 
+                    shadowColor = 'rgba(255, 69, 0, 0.9)'; 
+                }
+
+                ctx.fillStyle = textColor;
+                ctx.shadowColor = shadowColor;
+                ctx.shadowBlur = 25 * opacity; 
+                ctx.shadowOffsetX = 5;
+                ctx.shadowOffsetY = 5;
+
+                ctx.fillText("GOAL!", canvas.width / 2, canvas.height / 2 - fontSize * 0.6); 
+
+                if (lastGoalScorer) {
+                    const teamFontSize = fontSize * 0.6;
+                    ctx.font = `${teamFontSize}px 'Orbitron', sans-serif`;
+                    // Metin güncellendi
+                    ctx.fillText(`${lastGoalScorer === 'BLUE' ? 'SİZ' : 'RAKİP'} GOL ATTI!`, canvas.width / 2, canvas.height / 2 + fontSize * 0.2); 
+                }
+
+                ctx.restore(); 
+            }
+        }
+
+        function startFireEffect(goalSide) {
+            const goalWidth = canvas.width * 0.3;
+            const goalHeight = canvas.height * 0.04;
+            let fireY;
+
+            if (goalSide === 'top') { // Rakip kaleye gol (biz attık)
+                fireY = fieldOffsetY;
+            } else { // Bizim kaleye gol (rakip attı)
+                fireY = fieldOffsetY + actualFieldHeight;
+            }
+
+            const leftPostX = canvas.width / 2 - goalWidth / 2;
+            const rightPostX = canvas.width / 2 + goalWidth / 2;
+
+            const numParticlesPerBurst = 20; 
+            const burstInterval = 50; 
+            let totalBursts = FIRE_EFFECT_DURATION / burstInterval;
+            let currentBurst = 0;
+
+            const fireInterval = setInterval(() => {
+                if (currentBurst >= totalBursts) {
+                    clearInterval(fireInterval);
+                    return;
+                }
+                for (let i = 0; i < numParticlesPerBurst; i++) {
+                    const randomX = leftPostX + Math.random() * goalWidth;
+                    createFireParticle(randomX, fireY, goalSide); 
+                }
+                currentBurst++;
+            }, burstInterval);
+        }
+
+        function drawGameOverScreen() {
+            if (!gameOver) return;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const winnerText = blueScore >= WINNING_SCORE ? "SİZ KAZANDINIZ!" : "RAKİP KAZANDI!";
+            const winnerColor = blueScore >= WINNING_SCORE ? DEFAULT_BLUE_COLOR : RED_TEAM_COLOR; 
+
+            ctx.font = `${canvas.height * 0.08}px 'Orbitron', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = winnerColor;
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+            ctx.shadowBlur = 20;
+            ctx.fillText(winnerText, canvas.width / 2, canvas.height / 2 - 30);
+
+            ctx.font = `${canvas.height * 0.04}px 'Orbitron', sans-serif`;
+            ctx.fillStyle = 'white';
+            ctx.shadowBlur = 10;
+            ctx.fillText("YENİDEN BAŞLAMAK İÇİN TIKLA", canvas.width / 2, canvas.height / 2 + 50);
+            
+            ctx.shadowBlur = 0; 
+
+            canvas.onclick = function() {
+                if (gameOver) {
+                    blueScore = 0;
+                    redScore = 0;
+                    gameOver = false;
+                    // Yeni oyun başlarken bizim takımımızdan başla
+                    currentPlayerTurn = 'BLUE'; 
+                    resetGameElements();
+                    canvas.onclick = null;
+                    enableGameInput();
+                }
+            };
+            disableGameInput();
+        }
+
+        function drawBallPlacementIndicator() {
+            if (!isBallPlacementMode || gameOver) return;
+
+            ctx.save();
+
+            const pulseSpeed = 0.005;
+            const pulse = Math.abs(Math.sin(Date.now() * pulseSpeed));
+
+            const maxRadiusOffset = ball.radius * 1.5;
+            const currentRadius = ball.radius + (pulse * maxRadiusOffset);
+
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, currentRadius, 0, Math.PI * 2);
+
+            const gradient = ctx.createRadialGradient(ball.x, ball.y, ball.radius, ball.x, ball.y, currentRadius);
+            gradient.addColorStop(0, 'rgba(255, 255, 0, 0.2)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 0, ' + (0.5 + pulse * 0.3) + ')');
+            gradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(255, 255, 0, ' + (0.8 - pulse * 0.4) + ')';
+            ctx.lineWidth = 3 + (pulse * 2);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
+                if (typeof radius === 'number') {
+                    radius = { tl: radius, tr: radius, br: radius, bl: radius };
+                } else if (typeof radius === 'object') {
+                    radius = { 
+                        tl: radius.tl || 0, 
+                        tr: radius.tr || 0, 
+                        br: radius.br || 0, 
+                        bl: radius.bl || 0 
+                    };
+                } else {
+                    radius = { tl: 0, tr: 0, br: 0, bl: 0 };
+                }
+                this.beginPath();
+                this.moveTo(x + radius.tl, y);
+                this.lineTo(x + width - radius.tr, y);
+                this.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+                this.lineTo(x + width, y + height - radius.br);
+                this.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+                this.lineTo(x + radius.bl, y + height);
+                this.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+                this.lineTo(x, y + radius.tl);
+                this.quadraticCurveTo(x, y, x + radius.tl, y);
+                this.closePath();
+                return this;
+            };
+        }
+
+        // --- Yeni Forma Seçim Menüsü Fonksiyonları ---
+        function initializePatternOptions() {
+            patternOptionsContainer.innerHTML = ''; // Mevcut seçenekleri temizle
+
+            const patternNames = {
+                "solid": "Düz Renk",
+                "jersey1": "Mavi & Beyaz Çubuklar",
+                "jersey2": "Mavi & Sarı Şerit",
+                "jersey3": "Mavi & Turuncu Yarım",
+                "jersey4": "Mavi & Yeşil Kareler",
+                "jersey5": "Mavi & Gri Zigzag",
+                "jersey6": "Mavi & Mor Noktalar",
+                "jersey7": "Mavi & Kırmızı Dalgalar",
+                "jersey8": "Mavi & Cyan Gradyan",
+                "jersey9": "Mavi & Pembe Parçalı",
+                "jersey10": "Mavi & Kahverengi Çapraz"
+            };
+
+            for (const key in jerseyPatterns) {
+                const patternItem = document.createElement('div');
+                patternItem.classList.add('pattern-item');
+                patternItem.dataset.pattern = key;
+
+                const patternCanvas = document.createElement('canvas');
+                patternCanvas.width = 80; // Önizleme boyutu
+                patternCanvas.height = 80;
+                const pCtx = patternCanvas.getContext('2d');
+
+                // Deseni canvas'a çiz
+                jerseyPatterns[key](pCtx, 80, DEFAULT_BLUE_COLOR);
+
+                patternItem.appendChild(patternCanvas);
+                patternOptionsContainer.appendChild(patternItem);
+
+                // Seçili deseni vurgula
+                if (key === activePatternKey) {
+                    patternItem.classList.add('selected');
+                }
+
+                patternItem.addEventListener('click', () => {
+                    playButtonSound(); // Butona tıklama sesi
+                    // Önceki seçili deseni kaldır
+                    const previouslySelected = document.querySelector('.pattern-item.selected');
+                    if (previouslySelected) {
+                        previouslySelected.classList.remove('selected');
+                    }
+                    // Yeni seçili deseni ayarla
+                    patternItem.classList.add('selected');
+                    activePatternKey = key; // Aktif deseni güncelle
+                    updateTeamPatterns(); // Oyuncuların desenlerini güncelle
+                });
+            }
+        }
+
+
+        let lastTime = 0;
+        function gameLoop(currentTime) {
+            const deltaTime = currentTime - lastTime; 
+            lastTime = currentTime;
+
+            if (celebrationTimer > 0) {
+                celebrationTimer -= deltaTime; 
+            }
+            if (fireEffectTimer > 0) {
+                fireEffectTimer -= deltaTime;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            
+            if (gameStarted) {
+                if (!gameOver) { 
+                    if (!isBallPlacementMode) {
+                        updatePlayers(); 
+                        updateBall();    
+                        checkGoals(); 
+                        checkMoveCompletion(); 
+                    } else {
+                        ball.vx = 0;
+                        ball.vy = 0;
+                    }
+                }
+
+                drawField();     
+                drawPlayers();
+                drawBallTrailParticles(); 
+                drawBall();      
+                drawScore(); 
+                drawCelebration(); 
+                
+                updateFireParticles(); 
+                drawFireParticles();   
+                updateBallTrailParticles();
+                
+                drawBallPlacementIndicator(); 
+
+                drawGameOverScreen(); 
+            } // gameStarted kontrolü sona erdiğinde oyun döngüsü çizimi durur
+            
+            requestAnimationFrame(gameLoop); 
+        }
+
+        // --- Menü Butonları Olay Dinleyicileri ---
+        startGameButton.addEventListener('click', () => {
+            playButtonSound(); // Butona tıklama sesi
+            mainMenu.classList.add('hidden'); // Ana menüyü gizle
+            gameStarted = true;
+            setGameElementsPositions();
+            // Oyun başladığında bizim takımımızdan (mavi) başla
+            currentPlayerTurn = 'BLUE'; 
+            enableGameInput();
+        });
+
+        howToPlayButton.addEventListener('click', () => {
+            playButtonSound(); // Butona tıklama sesi
+            alert("Oyun alanına dokunarak veya tıklayarak oyuncunuzu seçin. Geri çekerek atış gücünü ayarlayın ve bırakarak topa vurun. Topu rakip kaleye sokarak gol atın! Kendi kalenizi koruyun. Sırayla oynanır. Topa değdiremezseniz rakip topu dilediği yere yerleştirir.");
+        });
+
+        optionsButton.addEventListener('click', () => {
+            playButtonSound(); // Butona tıklama sesi
+            mainMenu.classList.add('hidden'); // Ana menüyü gizle
+            optionsMenu.classList.remove('hidden'); // Ayarlar menüsünü göster
+            initializePatternOptions(); // Ayarlar menüsü açıldığında desenleri oluştur
+            disableGameInput(); // Oyuna girişleri devre dışı bırak
+        });
+
+        backToMainButton.addEventListener('click', () => {
+            playButtonSound(); // Butona tıklama sesi
+            optionsMenu.classList.add('hidden'); // Ayarlar menüsünü gizle
+            mainMenu.classList.remove('hidden'); // Ana menüyü göster
+            if (gameStarted) { // Oyun zaten başlamışsa inputları tekrar etkinleştir
+                enableGameInput();
+            }
+        });
+        
+        // Uygulama başlangıcı
+        mainMenu.classList.remove('hidden'); // Ana menüyü başlangıçta göster
+        updateTeamPatterns(); // Oyun yüklenirken varsayılan deseni uygula
+        resizeCanvas(); 
+        requestAnimationFrame(gameLoop); 
+    </script>
+</body>
+</html>
